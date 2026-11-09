@@ -1,0 +1,10 @@
+# Only what the test suite needs, for a PC without the Pi, camera or robot (Python 3.12+):
+#   python -m pip install -r requirements-dev.txt
+#   python -m pytest
+# 5 tests in tests/test_pipeline.py also need ultralytics (and so torch); without it they are
+# skipped. To run them, install CPU torch first and then the full requirements.txt.
+opencv-python==5.0.0.93
+numpy==2.5.3
+pillow==12.3.0
+PyYAML==6.0.3
+pytest==9.1.1

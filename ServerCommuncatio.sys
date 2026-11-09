@@ -1,0 +1,147 @@
+MODULE ServerCommuncatio(SYSMODULE)
+
+!!!!!!!!!!!!!!!!LOCAL VARIBLES!!!!!!!!!!!!!!!!!
+    !Are not callabe in main
+VAR socketdev clientSocket;
+VAR socketdev serverSocket;
+VAR socketstatus status;
+VAR socketdev robotClient;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!########################################################
+!#########    !Example code Server   ####################
+
+!    !create and Connect server (you must define some varibles in the com module)
+!    ServerCreateAndConnect; 
+  
+!    !handling a return string from client. 
+!     client_message:=ReciveMessage();
+!    !Send an answer to client
+
+!    SendMessage ("Hello from robot");    
+!    !Closing the server
+!     ServerCloseAndDisconnect;
+!    
+!########################################################
+
+
+
+!########################################################
+!#########    !Example code client   ####################
+!    !connect to Server
+!    RobotAsClientConnect;
+!    !handle answer from server
+!    Server_message:=RobotClientReciveMessage();
+!    TPWrite "SERVER SAYS:"+Server_message;
+!    !Send message to server
+!    client_message:="Time to die";
+!    RobotClienSendMessage(client_message);
+!    !disconnect and close 
+!    RobotClientCloseAndDisconnect;
+!#######################################################        
+        
+!######## Robot as client######################    
+  PROC RobotAsClientConnect()
+    VAR num retry_no := 0;
+
+    
+    SocketCreate robotClient;
+    !#Set socket  port. To find the robot adress use cmd and type ipconfig in the terminal
+    !#you may have to open the port in the firewall as well. This must match server side when doing server_socket.bind
+    SocketConnect robotClient, "192.168.125.205", 5000;
+    TPWrite "I LIVE!";
+    ERROR
+
+    IF ERRNO = ERR_SOCK_TIMEOUT THEN
+        IF retry_no < 5 THEN
+        WaitTime 1;
+        retry_no := retry_no + 1;
+        RETRY;
+        ELSE
+            RAISE;
+        ENDIF
+    ENDIF
+ENDPROC  
+   
+ PROC  RobotClientCloseAndDisconnect ()
+    !Handshake between server and client:
+    ! - Close socket.
+    SocketClose robotClient;
+    
+    TPWrite "And i DIE..... robotClient: Connection Closed .";
+  ENDPROC   
+  
+    PROC RobotClienSendMessage(string Message)
+    ! Skicka svar till PC
+    IF SocketGetStatus(robotClient) = SOCKET_CONNECTED THEN
+       SocketSend robotClient \Str:=Message;
+	ENDIF    
+  ENDPROC
+
+   Func String RobotClientReciveMessage()
+    ! Väntar och retunerar ett svar i form av en string
+VAR string RobotClienReceivedString;
+    IF SocketGetStatus(robotClient) = SOCKET_CONNECTED THEN
+        SocketReceive robotClient \Str:=RobotClienReceivedString \Time:=WAIT_MAX;
+        TPWrite RobotClienReceivedString;		
+	RETURN RobotClienReceivedString;
+    ENDIF  
+  ENDFUNC 
+
+
+!######## Robot as Server ######################
+  PROC ServerCreateAndConnect()
+    ! Handshake between server and client:
+    ! - Creates socket.
+    ! - Waits for incoming TCP connection.
+    VAR string clientIP;	
+    VAR string ipController:= "192.168.125.1";  !PERS string ipController:= "192.168.125.1"; !robot default IP
+    VAR num serverPort:= 5000;
+    TPErase;
+    SocketCreate serverSocket;
+    SocketBind serverSocket, ipController, serverPort;
+    SocketListen serverSocket; 
+    TPWrite "SERVER: Server waiting for incoming connections ...";
+    WHILE SocketGetStatus(clientSocket) <> SOCKET_CONNECTED DO
+        SocketAccept serverSocket,clientSocket \ClientAddress:=clientIP \Time:=WAIT_MAX;
+        IF SocketGetStatus(clientSocket) <> SOCKET_CONNECTED THEN
+            TPWrite "SERVER: Problem serving an incoming connection.";
+            TPWrite "SERVER: Try reconnecting.";
+        ENDIF
+        !//Wait 0.5 seconds for the next reconnection
+        WaitTime 0.5;
+    ENDWHILE
+    TPWrite "SERVER: Connected to IP " + clientIP;
+  ENDPROC
+
+  PROC ServerCloseAndDisconnect ()
+    !Handshake between server and client:
+    ! - Close socket.
+    SocketClose clientSocket;
+    SocketClose serverSocket; 
+    TPWrite "SERVER: Connection Closed .";
+  ENDPROC  
+ 
+  PROC SendMessage(string Message)
+    ! Skicka svar till PC
+    IF SocketGetStatus(clientSocket) = SOCKET_CONNECTED THEN
+       SocketSend clientSocket \Str:=Message;
+	ENDIF    
+  ENDPROC
+
+  Func String ReciveMessage()
+    ! Väntar och retunerar ett svar i form av en string
+VAR string ReceivedString;
+    IF SocketGetStatus(clientSocket) = SOCKET_CONNECTED THEN
+        SocketReceive clientSocket \Str:=ReceivedString \Time:=WAIT_MAX;
+        TPWrite ReceivedString;		
+	RETURN ReceivedString;
+    ENDIF  
+  ENDFUNC
+
+  
+  
+
+    
+ENDMODULE

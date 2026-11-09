@@ -1,0 +1,65 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Files the tools write at run time ---
+# Frames and overlays saved by camera.py, basler_live.py, live_view.py, live_pick.py and
+# the dashboard's "Save frame". The two sample frames below are kept on purpose
+# (several tools use calibration_frame.png as their default input).
+data/captured_frames/*
+!data/captured_frames/calibration_frame.png
+!data/captured_frames/overlay_live.png
+# live_view.py mould teach (crops and values) - lab-specific, not part of the hand-in
+data/mould/
+data/mould.json
+# teach_angle.py writes data/angle_teach.json through a temporary file; a crash can leave one
+data/*.tmp
+# calibrate.py writes this when it cannot find the marker
+calib_fail.png
+# template_fit.py default overlay
+template_check.png
+# verify_positions.py / verify_pos_code.py output
+VisionCheck.mod
+verify_out/
+# dataset tools (prepare_dataset.py, optimized_anno_img.py) - large, not part of the repo
+data/raw/
+data/labels_obb/
+data/dataset/
+data/previews/
+# training runs other than the shipped weights
+runs/*
+!runs/obb/
+runs/obb/*
+!runs/obb/obb_train/
+runs/obb/obb_train/*
+!runs/obb/obb_train/weights/
+*.pt
+
+# NOTE: these are needed and must stay tracked:
+#   data/calibration.json, data/angle_teach.json,
+#   runs/obb/obb_train/weights/best.onnx, runs/obb/obb_train/weights/best_ncnn_model/

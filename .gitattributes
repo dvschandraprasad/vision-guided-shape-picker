@@ -1,0 +1,16 @@
+# No "* text=auto" on purpose: Git stores every file byte-for-byte as it was handed in
+# (some .py files use CRLF, most use LF). Only the rules below are set.
+
+# Keep the RAPID files byte-for-byte (CRLF line endings, Latin-1 text in the .sys file).
+*.mod -text
+*.sys -text
+
+# Shell scripts must keep LF to run on the Pi.
+*.sh text eol=lf
+
+# Model weights and images are binary.
+*.onnx binary
+*.bin binary
+*.param -text
+*.png binary
+*.jpg binary

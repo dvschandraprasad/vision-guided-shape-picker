@@ -1,0 +1,16 @@
+# Everything except torch. Install torch from the CPU index FIRST (PI4_QUICKSTART step 2):
+#   python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#   python -m pip install -r requirements.txt
+#   python -m pip check
+# Installed the other way round, pip resolves torch from PyPI, and that Linux wheel pulls the
+# whole CUDA stack (nvidia-cudnn-cu13 alone is 595 MB) onto the Pi. ultralytics needs torch even
+# when the weights are ncnn, so torch cannot be skipped - it just has to be the CPU build.
+ultralytics==8.4.174
+opencv-python==5.0.0.93   # not headless: the dashboard and live_view.py use cv2.imshow
+numpy==2.5.3
+pillow==12.3.0
+PyYAML==6.0.3
+pypylon==26.8             # Basler camera; one abi3 wheel per platform, the Linux one bundles the pylon runtime
+ncnn==1.0.20261020        # ultralytics/nn/backends/ncnn.py imports it for best_ncnn_model
+onnxruntime==1.31.0       # only for --model runs/obb/obb_train/weights/best.onnx; ncnn needs nothing
+pytest==9.1.1
