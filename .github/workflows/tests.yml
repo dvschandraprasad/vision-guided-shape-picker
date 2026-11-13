@@ -1,0 +1,95 @@
+# Runs the pytest suite on GitHub. No camera, robot or Raspberry Pi is needed.
+#
+# Two jobs:
+#   light - only requirements-dev.txt (no torch). Like a student PC without the AI stack.
+#   full  - CPU torch from the PyTorch CPU index, then the full requirements.txt
+#           (same install order as on the Pi), so the ultralytics tests run too.
+#
+# Files that are missing from the hand-in (scripts/dashboard_new.py, scripts/dashboard.py,
+# rapid/updated_robo.mod, the angle-teach sample frame) do NOT make this workflow fail:
+# tests/conftest.py leaves out or skips exactly the tests that need them and prints why.
+# When you add one of those files, its tests run here again by themselves.
+#
+# Python 3.12 or newer: requirements.txt pins numpy==2.5.3, which has no wheel for 3.11.
+
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  light:
+    name: light (requirements-dev, Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: System libraries for opencv-python (not the headless build)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0t64
+
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest -rs
+
+  full:
+    name: full (CPU torch + requirements.txt, Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: System libraries for opencv-python and Tk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0t64 xvfb
+
+      - name: Install CPU torch first (avoids the CUDA build)
+        run: python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install requirements.txt
+        run: python -m pip install -r requirements.txt
+
+      - name: pip check (information only)
+        continue-on-error: true
+        run: python -m pip check
+
+      - name: Run tests (virtual display, for the Tk dashboard tests once dashboard.py is added)
+        run: xvfb-run -a python -m pytest -rs
